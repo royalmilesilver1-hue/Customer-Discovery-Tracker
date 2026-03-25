@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foot Traffic Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f4f0; --bg3: #eceae4;
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.2);
+    --blue: #185FA5; --blue-light: #E6F1FB;
+    --radius: 10px; --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0efe9; --text2: #a8a7a2; --text3: #6e6d69;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+      --blue: #378ADD; --blue-light: #0c2a47;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
+  .app { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px; }
+  .period-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .period-row label { font-size: 13px; color: var(--text2); font-weight: 500; }
+  select { font-size: 13px; padding: 7px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; }
+  .sources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 20px; }
+  .src-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 14px 8px; border-radius: var(--radius-lg); border: 0.5px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; transition: transform 0.1s, background 0.15s; font-size: 13px; font-weight: 500; text-align: center; }
+  .src-btn:hover { background: var(--bg2); }
+  .src-btn:active { transform: scale(0.96); }
+  .src-btn .count { font-size: 22px; font-weight: 600; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .met { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
+  .met .ml { font-size: 11px; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .met .mv { font-size: 20px; font-weight: 600; color: var(--text); }
+  .met .mv.sm { font-size: 14px; padding-top: 3px; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .chart-wrap { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
+  .ctitle { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .legend span { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; color: var(--text2); padding: 7px 10px; border-bottom: 0.5px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 8px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  .del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 0 4px; transition: color 0.15s; }
+  .del:hover { color: #E24B4A; }
+  .empty { color: var(--text3); font-size: 13px; padding: 16px 0; text-align: center; }
+  .section-label { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  @media (max-width: 480px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .sources-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Foot Traffic Tracker</h1>
+  <p class="sub">Tap a source to log a customer visit</p>
+
+  <div class="card">
+    <div class="period-row">
+      <label>Period:</label>
+      <select id="periodType" onchange="updatePeriodOptions()">
+        <option value="week">Week</option>
+        <option value="month" selected>Month</option>
+      </select>
+      <select id="periodVal" onchange="renderAll()"></select>
+      <select id="yearVal" onchange="renderAll()"></select>
+    </div>
+    <div class="sources-grid" id="sourcesGrid"></div>
+  </div>
+
+  <div class="metrics">
+    <div class="met"><div class="ml">This period</div><div class="mv" id="mTotal">0</div></div>
+    <div class="met"><div class="ml">Top source</div><div class="mv sm" id="mTop">—</div></div>
+    <div class="met"><div class="ml">Sources used</div><div class="mv" id="mSources">0</div></div>
+    <div class="met"><div class="ml">All time</div><div class="mv" id="mAll">0</div></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-wrap">
+      <div class="ctitle">This period</div>
+      <div class="legend" id="pieLegend"></div>
+      <div style="position:relative;height:200px;"><canvas id="pieChart"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="ctitle">Last 6 periods</div>
+      <div style="position:relative;height:220px;"><canvas id="barChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Log</div>
+    <div id="logWrap"></div>
+  </div>
+</div>
+
+<script>
+const SOURCES = [
+  {key:'tiktok',label:'TikTok',color:'#1D9E75'},
+  {key:'instagram',label:'Instagram',color:'#D4537E'},
+  {key:'google',label:'Google',color:'#378ADD'},
+  {key:'passingby',label:'Passing by',color:'#888780'},
+  {key:'facebook',label:'Facebook',color:'#534AB7'},
+  {key:'wordofmouth',label:'Word of mouth',color:'#BA7517'},
+  {key:'othersocial',label:'Other social',color:'#639922'},
+  {key:'tourguide',label:'Tour guide',color:'#D85A30'},
+  {key:'hotel',label:'Hotel',color:'#993556'},
+  {key:'website',label:'Website',color:'#185FA5'},
+];
+
+let logs = JSON.parse(localStorage.getItem('ftLogs_v2') || '[]');
+let pieInst = null, barInst = null;
+const save = () => localStorage.setItem('ftLogs_v2', JSON.stringify(logs));
+
+function getMonths() {
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    .map((l,i) => ({label:l, val:String(i+1).padStart(2,'0')}));
+}
+function getWeeks() {
+  return Array.from({length:53},(_,i)=>({label:`Week ${i+1}`,val:String(i+1).padStart(2,'0')}));
+}
+
+function updatePeriodOptions() {
+  const type = document.getElementById('periodType').value;
+  const items = type==='month' ? getMonths() : getWeeks();
+  const now = new Date();
+  const curMonth = String(now.getMonth()+1).padStart(2,'0');
+  const curWeek = String(Math.ceil((now - new Date(now.getFullYear(),0,1))/(7*86400000))).padStart(2,'0');
+  const curVal = type==='month' ? curMonth : curWeek;
+  const curYear = String(now.getFullYear());
+  document.getElementById('periodVal').innerHTML = items.map(i=>`<option value="${i.val}"${i.val===curVal?' selected':''}>${i.label}</option>`).join('');
+  document.getElementById('yearVal').innerHTML = [now.getFullYear()-1,now.getFullYear(),now.getFullYear()+1]
+    .map(y=>`<option value="${y}"${String(y)===curYear?' selected':''}>${y}</option>`).join('');
+  renderAll();
+}
+
+function getPK() {
+  const t=document.getElementById('periodType').value;
+  const p=document.getElementById('periodVal').value;
+  const y=document.getElementById('yearVal').value;
+  return `${y}-${t}-${p}`;
+}
+
+function logEntry(src) {
+  logs.push({period:getPK(), source:src, ts:Date.now()});
+  save(); renderAll();
+}
+function deleteEntry(i) { logs.splice(i,1); save(); renderAll(); }
+
+function countBySource(entries) {
+  const c={};
+  SOURCES.forEach(s=>c[s.key]=0);
+  entries.forEach(e=>{if(c[e.source]!==undefined)c[e.source]++;});
+  return c;
+}
+
+function renderSources(counts) {
+  document.getElementById('sourcesGrid').innerHTML = SOURCES.map(s=>
+    `<button class="src-btn" onclick="logEntry('${s.key}')">
+      <span class="count" style="color:${s.color}">${counts[s.key]}</span>
+      <span>${s.label}</span>
+    </button>`).join('');
+}
+
+function renderMetrics(pk, counts) {
+  const total = logs.filter(l=>l.period===pk).length;
+  document.getElementById('mTotal').textContent = total;
+  document.getElementById('mAll').textContent = logs.length;
+  document.getElementById('mSources').textContent = Object.values(counts).filter(v=>v>0).length;
+  const top = total===0 ? '—' : SOURCES.reduce((a,b)=>counts[b.key]>counts[a.key]?b:a,SOURCES[0]).label;
+  document.getElementById('mTop').textContent = top;
+}
+
+function renderPie(counts) {
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+  document.getElementById('pieLegend').innerHTML = SOURCES.filter(s=>counts[s.key]>0)
+    .map(s=>`<span><span class="legend-dot" style="background:${s.color}"></span>${s.label} ${total?Math.round(counts[s.key]/total*100)+'%':''}</span>`).join('');
+  if (pieInst) { pieInst.destroy(); pieInst=null; }
+  if (total===0) return;
+  pieInst = new Chart(document.getElementById('pieChart'), {
+    type:'doughnut',
+    data:{labels:SOURCES.map(s=>s.label),datasets:[{data:SOURCES.map(s=>counts[s.key]),backgroundColor:SOURCES.map(s=>s.color),borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}},cutout:'55%'}
+  });
+}
+
+function renderBar() {
+  const type = document.getElementById('periodType').value;
+  const yr = document.getElementById('yearVal').value;
+  const curPv = document.getElementById('periodVal').value;
+  const items = type==='month' ? getMonths() : getWeeks();
+  const curIdx = items.findIndex(i=>i.val===curPv);
+  const last6 = items.slice(Math.max(0,curIdx-5), curIdx+1);
+  const labels = last6.map(i=>i.label);
+  const totals = last6.map(i=>logs.filter(l=>l.period===`${yr}-${type}-${i.val}`).length);
+  if (barInst) { barInst.destroy(); barInst=null; }
+  barInst = new Chart(document.getElementById('barChart'), {
+    type:'bar',
+    data:{labels,datasets:[{data:totals,backgroundColor:'#378ADD',borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:'#888780'},grid:{color:'rgba(136,135,128,0.15)'}},x:{ticks:{color:'#888780',autoSkip:false},grid:{display:false}}}}
+  });
+}
+
+function renderLog(pk) {
+  const entries = logs.map((e,i)=>({...e,gi:i})).filter(e=>e.period===pk).reverse();
+  const wrap = document.getElementById('logWrap');
+  if (!entries.length) { wrap.innerHTML='<p class="empty">No entries for this period yet</p>'; return; }
+  wrap.innerHTML = `<table><thead><tr><th>#</th><th>Source</th><th>Date & time</th><th></th></tr></thead><tbody>
+    ${entries.map((e,i)=>{
+      const src=SOURCES.find(s=>s.key===e.source);
+      const d=new Date(e.ts);
+      return `<tr><td>${entries.length-i}</td><td><span style="color:${src?.color||'#888'}">${src?.label||e.source}</span></td><td>${d.toLocaleDateString('en-GB')} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td><td><button class="del" onclick="deleteEntry(${e.gi})">✕</button></td></tr>`;
+    }).join('')}
+  </tbody></table>`;
+}
+
+function renderAll() {
+  const pk=getPK();
+  const entries=logs.filter(l=>l.period===pk);
+  const counts=countBySource(entries);
+  renderSources(counts);
+  renderMetrics(pk,counts);
+  renderPie(counts);
+  renderBar();
+  renderLog(pk);
+}
+
+document.getElementById('periodVal').addEventListener('change', renderAll);
+document.getElementById('yearVal').addEventListener('change', renderAll);
+updatePeriodOptions();
+</script>
+</body>
+</html>
