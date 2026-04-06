@@ -4,240 +4,827 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Foot Traffic Tracker</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #ffffff; --bg2: #f5f4f0; --bg3: #eceae4;
-    --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
-    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.2);
-    --blue: #185FA5; --blue-light: #E6F1FB;
-    --radius: 10px; --radius-lg: 14px;
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: #2a2a2e;
+    --border-hover: #3a3a40;
+    --text: #f0f0f2;
+    --muted: #6b6b75;
+    --muted2: #45454d;
+ 
+    --tiktok:   #25d4a0;
+    --instagram:#e1306c;
+    --google:   #4285f4;
+    --passing:  #a0a0a8;
+    --facebook: #7c6ff7;
+    --wordmouth:#f5a623;
+    --othersoc: #4cd964;
+    --tourguide:#ff6b35;
+    --hotel:    #ff3b84;
+    --website:  #00b4d8;
+    --returning:#ffd60a;
+    --christmas:#e63946;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
-      --text: #f0efe9; --text2: #a8a7a2; --text3: #6e6d69;
-      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
-      --blue: #378ADD; --blue-light: #0c2a47;
-    }
+ 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 28px 20px 60px;
+    max-width: 900px;
+    margin: 0 auto;
   }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
-  .app { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
-  h1 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-  .sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
-  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px; }
-  .period-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
-  .period-row label { font-size: 13px; color: var(--text2); font-weight: 500; }
-  select { font-size: 13px; padding: 7px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; }
-  .sources-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 20px; }
-  .src-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 14px 8px; border-radius: var(--radius-lg); border: 0.5px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; transition: transform 0.1s, background 0.15s; font-size: 13px; font-weight: 500; text-align: center; }
-  .src-btn:hover { background: var(--bg2); }
-  .src-btn:active { transform: scale(0.96); }
-  .src-btn .count { font-size: 22px; font-weight: 600; }
-  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-  .met { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
-  .met .ml { font-size: 11px; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .met .mv { font-size: 20px; font-weight: 600; color: var(--text); }
-  .met .mv.sm { font-size: 14px; padding-top: 3px; }
-  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
-  .chart-wrap { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
-  .ctitle { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-  .legend span { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
-  .legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; font-weight: 500; color: var(--text2); padding: 7px 10px; border-bottom: 0.5px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-  td { padding: 8px 10px; border-bottom: 0.5px solid var(--border); color: var(--text); }
-  tr:last-child td { border-bottom: none; }
-  .del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 0 4px; transition: color 0.15s; }
-  .del:hover { color: #E24B4A; }
-  .empty { color: var(--text3); font-size: 13px; padding: 16px 0; text-align: center; }
-  .section-label { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-  @media (max-width: 480px) {
-    .metrics { grid-template-columns: repeat(2, 1fr); }
+ 
+  /* ── Header ── */
+  .header {
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .header p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 6px;
+    font-weight: 300;
+    letter-spacing: 0.2px;
+  }
+ 
+  /* ── Period Controls ── */
+  .controls-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .controls-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 9px 36px 9px 14px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b75' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    transition: border-color 0.2s;
+  }
+  select:focus { outline: none; border-color: #4285f4; }
+  select:hover { border-color: var(--border-hover); }
+ 
+  /* ── Source Grid ── */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-left: 2px;
+  }
+ 
+  .sources-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+ 
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+ 
+  .source-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 12px 16px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.15s, transform 0.1s, background 0.15s;
+    position: relative;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .source-btn:active {
+    transform: scale(0.96);
+  }
+  .source-btn:hover {
+    border-color: var(--border-hover);
+    background: #222226;
+  }
+  .source-btn.pulse {
+    animation: pulse 0.35s ease;
+  }
+  @keyframes pulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.07); }
+    100% { transform: scale(1); }
+  }
+ 
+  .source-count {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    transition: transform 0.15s;
+  }
+  .source-name {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .source-btn .badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted2);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .source-btn:hover .badge { opacity: 1; }
+ 
+  /* right-click / long-press undo hint */
+  .source-btn .undo-hint {
+    font-size: 9px;
+    color: var(--muted2);
+    font-family: 'DM Mono', monospace;
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .source-btn:hover .undo-hint { opacity: 1; }
+ 
+  /* ── Stats Row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 580px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px;
+  }
+  .stat-card .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .stat-card .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-card .stat-value.highlight {
+    font-size: 18px;
+    line-height: 1.2;
+    color: var(--text);
+  }
+ 
+  /* ── Charts Row ── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 600px) {
     .charts-row { grid-template-columns: 1fr; }
-    .sources-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+  }
+  .chart-card h3 {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .bar-chart { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .bar-label {
+    font-size: 11px;
+    color: var(--muted);
+    width: 90px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .bar-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 24px;
+    text-align: right;
+  }
+ 
+  /* Trend chart */
+  .trend-chart { flex: 1; }
+  .trend-canvas { width: 100%; height: 140px; }
+ 
+  /* ── Breakdown table ── */
+  .breakdown-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .breakdown-card h3 {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-name {
+    font-size: 13px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .breakdown-bar-wrap {
+    flex: 1;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 0 12px;
+  }
+  .breakdown-bar { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .breakdown-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    width: 28px;
+    text-align: right;
+  }
+  .breakdown-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted2);
+    width: 38px;
+    text-align: right;
+  }
+ 
+  /* ── Actions ── */
+  .actions-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn:hover { border-color: var(--border-hover); color: var(--text); }
+  .btn.danger:hover { border-color: #e63946; color: #e63946; }
+  .btn.export { color: var(--text); border-color: var(--border-hover); }
+ 
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border-hover);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+ 
+  /* ── Responsive tweaks ── */
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+    .source-count { font-size: 26px; }
+    .source-name { font-size: 10px; }
   }
 </style>
 </head>
 <body>
-<div class="app">
+ 
+<div class="header">
   <h1>Foot Traffic Tracker</h1>
-  <p class="sub">Tap a source to log a customer visit</p>
-
-  <div class="card">
-    <div class="period-row">
-      <label>Period:</label>
-      <select id="periodType" onchange="updatePeriodOptions()">
-        <option value="week">Week</option>
-        <option value="month" selected>Month</option>
-      </select>
-      <select id="periodVal" onchange="renderAll()"></select>
-      <select id="yearVal" onchange="renderAll()"></select>
-    </div>
-    <div class="sources-grid" id="sourcesGrid"></div>
-  </div>
-
-  <div class="metrics">
-    <div class="met"><div class="ml">This period</div><div class="mv" id="mTotal">0</div></div>
-    <div class="met"><div class="ml">Top source</div><div class="mv sm" id="mTop">—</div></div>
-    <div class="met"><div class="ml">Sources used</div><div class="mv" id="mSources">0</div></div>
-    <div class="met"><div class="ml">All time</div><div class="mv" id="mAll">0</div></div>
-  </div>
-
-  <div class="charts-row">
-    <div class="chart-wrap">
-      <div class="ctitle">This period</div>
-      <div class="legend" id="pieLegend"></div>
-      <div style="position:relative;height:200px;"><canvas id="pieChart"></canvas></div>
-    </div>
-    <div class="chart-wrap">
-      <div class="ctitle">Last 6 periods</div>
-      <div style="position:relative;height:220px;"><canvas id="barChart"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="section-label">Log</div>
-    <div id="logWrap"></div>
+  <p>Tap a source to log a customer visit &nbsp;·&nbsp; Right-click to undo</p>
+</div>
+ 
+<!-- Controls -->
+<div class="controls-card">
+  <div class="controls-row">
+    <span class="controls-label">Period</span>
+    <select id="periodType" onchange="onPeriodTypeChange()">
+      <option value="month">Month</option>
+      <option value="week">Week</option>
+    </select>
+    <select id="periodMonth" onchange="renderAll()">
+      <option value="0">Jan</option><option value="1">Feb</option>
+      <option value="2">Mar</option><option value="3">Apr</option>
+      <option value="4">May</option><option value="5">Jun</option>
+      <option value="6">Jul</option><option value="7">Aug</option>
+      <option value="8">Sep</option><option value="9">Oct</option>
+      <option value="10">Nov</option><option value="11">Dec</option>
+    </select>
+    <select id="periodWeek" style="display:none" onchange="renderAll()">
+      <option value="1">Week 1</option>
+      <option value="2">Week 2</option>
+      <option value="3">Week 3</option>
+      <option value="4">Week 4</option>
+      <option value="5">Week 5</option>
+    </select>
+    <select id="periodYear" onchange="renderAll()"></select>
   </div>
 </div>
-
+ 
+<!-- Source Grid -->
+<div class="sources-card">
+  <div class="section-label">Log a visit</div>
+  <div class="grid" id="grid"></div>
+</div>
+ 
+<!-- Stats -->
+<div class="stats-row" id="statsRow">
+  <div class="stat-card">
+    <div class="stat-label">This Period</div>
+    <div class="stat-value" id="statPeriod">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Top Source</div>
+    <div class="stat-value highlight" id="statTop">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Sources Used</div>
+    <div class="stat-value" id="statSources">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">All Time</div>
+    <div class="stat-value" id="statAllTime">0</div>
+  </div>
+</div>
+ 
+<!-- Charts -->
+<div class="charts-row">
+  <div class="chart-card">
+    <h3>Top Sources — This Period</h3>
+    <div class="bar-chart" id="barChart"></div>
+  </div>
+  <div class="chart-card">
+    <h3>Last 6 Periods</h3>
+    <canvas class="trend-canvas" id="trendCanvas"></canvas>
+  </div>
+</div>
+ 
+<!-- Breakdown -->
+<div class="breakdown-card">
+  <h3>Full Breakdown — This Period</h3>
+  <div id="breakdown"></div>
+</div>
+ 
+<!-- Actions -->
+<div class="actions-row">
+  <button class="btn export" onclick="exportCSV()">↓ Export CSV</button>
+  <button class="btn danger" onclick="clearPeriod()">Clear Period</button>
+  <button class="btn danger" onclick="clearAll()">Clear All Data</button>
+</div>
+ 
+<div id="toast"></div>
+ 
 <script>
+// ── Sources definition ──────────────────────────────────────────
 const SOURCES = [
-  {key:'tiktok',label:'TikTok',color:'#1D9E75'},
-  {key:'instagram',label:'Instagram',color:'#D4537E'},
-  {key:'google',label:'Google',color:'#378ADD'},
-  {key:'passingby',label:'Passing by',color:'#888780'},
-  {key:'facebook',label:'Facebook',color:'#534AB7'},
-  {key:'wordofmouth',label:'Word of mouth',color:'#BA7517'},
-  {key:'othersocial',label:'Other social',color:'#639922'},
-  {key:'tourguide',label:'Tour guide',color:'#D85A30'},
-  {key:'hotel',label:'Hotel',color:'#993556'},
-  {key:'website',label:'Website',color:'#185FA5'},
+  { key: 'tiktok',     label: 'TikTok',           color: 'var(--tiktok)' },
+  { key: 'instagram',  label: 'Instagram',         color: 'var(--instagram)' },
+  { key: 'facebook',   label: 'Facebook',          color: 'var(--facebook)' },
+  { key: 'google',     label: 'Google',            color: 'var(--google)' },
+  { key: 'passing',    label: 'Passing By',        color: 'var(--passing)' },
+  { key: 'returning',  label: 'Returning',         color: 'var(--returning)' },
+  { key: 'wordmouth',  label: 'Word of Mouth',     color: 'var(--wordmouth)' },
+  { key: 'hotel',      label: 'Hotel',             color: 'var(--hotel)' },
+  { key: 'tourguide',  label: 'Tour Guide Recs',   color: 'var(--tourguide)' },
+  { key: 'website',    label: 'Website / Email',   color: 'var(--website)' },
+  { key: 'othersoc',   label: 'Other Socials',     color: 'var(--othersoc)' },
+  { key: 'christmas',  label: 'Xmas Market/Stall', color: 'var(--christmas)' },
 ];
-
-let logs = JSON.parse(localStorage.getItem('ftLogs_v2') || '[]');
-let pieInst = null, barInst = null;
-const save = () => localStorage.setItem('ftLogs_v2', JSON.stringify(logs));
-
-function getMonths() {
-  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-    .map((l,i) => ({label:l, val:String(i+1).padStart(2,'0')}));
+ 
+// ── Storage helpers ─────────────────────────────────────────────
+function storageKey(periodType, year, month, week) {
+  if (periodType === 'month') return `ft_${year}_m${month}`;
+  return `ft_${year}_m${month}_w${week}`;
 }
-function getWeeks() {
-  return Array.from({length:53},(_,i)=>({label:`Week ${i+1}`,val:String(i+1).padStart(2,'0')}));
+ 
+function getData(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; }
 }
-
-function updatePeriodOptions() {
-  const type = document.getElementById('periodType').value;
-  const items = type==='month' ? getMonths() : getWeeks();
-  const now = new Date();
-  const curMonth = String(now.getMonth()+1).padStart(2,'0');
-  const curWeek = String(Math.ceil((now - new Date(now.getFullYear(),0,1))/(7*86400000))).padStart(2,'0');
-  const curVal = type==='month' ? curMonth : curWeek;
-  const curYear = String(now.getFullYear());
-  document.getElementById('periodVal').innerHTML = items.map(i=>`<option value="${i.val}"${i.val===curVal?' selected':''}>${i.label}</option>`).join('');
-  document.getElementById('yearVal').innerHTML = [now.getFullYear()-1,now.getFullYear(),now.getFullYear()+1]
-    .map(y=>`<option value="${y}"${String(y)===curYear?' selected':''}>${y}</option>`).join('');
+function setData(key, obj) {
+  localStorage.setItem(key, JSON.stringify(obj));
+}
+function getAllData() {
+  const all = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('ft_')) {
+      try { all[k] = JSON.parse(localStorage.getItem(k)); } catch {}
+    }
+  }
+  return all;
+}
+ 
+// ── Period helpers ──────────────────────────────────────────────
+function getPeriodType() { return document.getElementById('periodType').value; }
+function getMonth()      { return parseInt(document.getElementById('periodMonth').value); }
+function getWeek()       { return parseInt(document.getElementById('periodWeek').value); }
+function getYear()       { return parseInt(document.getElementById('periodYear').value); }
+function currentKey()    { return storageKey(getPeriodType(), getYear(), getMonth(), getWeek()); }
+ 
+function onPeriodTypeChange() {
+  const isWeek = getPeriodType() === 'week';
+  document.getElementById('periodWeek').style.display = isWeek ? '' : 'none';
   renderAll();
 }
-
-function getPK() {
-  const t=document.getElementById('periodType').value;
-  const p=document.getElementById('periodVal').value;
-  const y=document.getElementById('yearVal').value;
-  return `${y}-${t}-${p}`;
+ 
+// ── Init selects ────────────────────────────────────────────────
+function initSelects() {
+  const now = new Date();
+  const yearSel = document.getElementById('periodYear');
+  for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === now.getFullYear()) o.selected = true;
+    yearSel.appendChild(o);
+  }
+  document.getElementById('periodMonth').value = now.getMonth();
 }
-
-function logEntry(src) {
-  logs.push({period:getPK(), source:src, ts:Date.now()});
-  save(); renderAll();
-}
-function deleteEntry(i) { logs.splice(i,1); save(); renderAll(); }
-
-function countBySource(entries) {
-  const c={};
-  SOURCES.forEach(s=>c[s.key]=0);
-  entries.forEach(e=>{if(c[e.source]!==undefined)c[e.source]++;});
-  return c;
-}
-
-function renderSources(counts) {
-  document.getElementById('sourcesGrid').innerHTML = SOURCES.map(s=>
-    `<button class="src-btn" onclick="logEntry('${s.key}')">
-      <span class="count" style="color:${s.color}">${counts[s.key]}</span>
-      <span>${s.label}</span>
-    </button>`).join('');
-}
-
-function renderMetrics(pk, counts) {
-  const total = logs.filter(l=>l.period===pk).length;
-  document.getElementById('mTotal').textContent = total;
-  document.getElementById('mAll').textContent = logs.length;
-  document.getElementById('mSources').textContent = Object.values(counts).filter(v=>v>0).length;
-  const top = total===0 ? '—' : SOURCES.reduce((a,b)=>counts[b.key]>counts[a.key]?b:a,SOURCES[0]).label;
-  document.getElementById('mTop').textContent = top;
-}
-
-function renderPie(counts) {
-  const total = Object.values(counts).reduce((a,b)=>a+b,0);
-  document.getElementById('pieLegend').innerHTML = SOURCES.filter(s=>counts[s.key]>0)
-    .map(s=>`<span><span class="legend-dot" style="background:${s.color}"></span>${s.label} ${total?Math.round(counts[s.key]/total*100)+'%':''}</span>`).join('');
-  if (pieInst) { pieInst.destroy(); pieInst=null; }
-  if (total===0) return;
-  pieInst = new Chart(document.getElementById('pieChart'), {
-    type:'doughnut',
-    data:{labels:SOURCES.map(s=>s.label),datasets:[{data:SOURCES.map(s=>counts[s.key]),backgroundColor:SOURCES.map(s=>s.color),borderWidth:0,hoverOffset:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}},cutout:'55%'}
+ 
+// ── Grid build ──────────────────────────────────────────────────
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  SOURCES.forEach(src => {
+    const btn = document.createElement('div');
+    btn.className = 'source-btn';
+    btn.id = `btn_${src.key}`;
+    btn.innerHTML = `
+      <span class="source-count" style="color:${src.color}" id="cnt_${src.key}">0</span>
+      <span class="source-name">${src.label}</span>
+      <span class="undo-hint">right-click undo</span>
+    `;
+    btn.addEventListener('click', () => logVisit(src.key, btn));
+    btn.addEventListener('contextmenu', (e) => { e.preventDefault(); undoVisit(src.key); });
+    grid.appendChild(btn);
   });
 }
-
-function renderBar() {
-  const type = document.getElementById('periodType').value;
-  const yr = document.getElementById('yearVal').value;
-  const curPv = document.getElementById('periodVal').value;
-  const items = type==='month' ? getMonths() : getWeeks();
-  const curIdx = items.findIndex(i=>i.val===curPv);
-  const last6 = items.slice(Math.max(0,curIdx-5), curIdx+1);
-  const labels = last6.map(i=>i.label);
-  const totals = last6.map(i=>logs.filter(l=>l.period===`${yr}-${type}-${i.val}`).length);
-  if (barInst) { barInst.destroy(); barInst=null; }
-  barInst = new Chart(document.getElementById('barChart'), {
-    type:'bar',
-    data:{labels,datasets:[{data:totals,backgroundColor:'#378ADD',borderRadius:4,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:'#888780'},grid:{color:'rgba(136,135,128,0.15)'}},x:{ticks:{color:'#888780',autoSkip:false},grid:{display:false}}}}
-  });
+ 
+// ── Log / Undo ──────────────────────────────────────────────────
+function logVisit(key, btn) {
+  const k = currentKey();
+  const d = getData(k);
+  d[key] = (d[key] || 0) + 1;
+  setData(k, d);
+  btn.classList.remove('pulse');
+  void btn.offsetWidth;
+  btn.classList.add('pulse');
+  renderAll();
+  showToast(`+1 ${SOURCES.find(s=>s.key===key).label}`);
 }
-
-function renderLog(pk) {
-  const entries = logs.map((e,i)=>({...e,gi:i})).filter(e=>e.period===pk).reverse();
-  const wrap = document.getElementById('logWrap');
-  if (!entries.length) { wrap.innerHTML='<p class="empty">No entries for this period yet</p>'; return; }
-  wrap.innerHTML = `<table><thead><tr><th>#</th><th>Source</th><th>Date & time</th><th></th></tr></thead><tbody>
-    ${entries.map((e,i)=>{
-      const src=SOURCES.find(s=>s.key===e.source);
-      const d=new Date(e.ts);
-      return `<tr><td>${entries.length-i}</td><td><span style="color:${src?.color||'#888'}">${src?.label||e.source}</span></td><td>${d.toLocaleDateString('en-GB')} ${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</td><td><button class="del" onclick="deleteEntry(${e.gi})">✕</button></td></tr>`;
-    }).join('')}
-  </tbody></table>`;
+ 
+function undoVisit(key) {
+  const k = currentKey();
+  const d = getData(k);
+  if (!d[key] || d[key] <= 0) { showToast('Nothing to undo'); return; }
+  d[key]--;
+  if (d[key] === 0) delete d[key];
+  setData(k, d);
+  renderAll();
+  showToast(`Undid 1 ${SOURCES.find(s=>s.key===key).label}`);
 }
-
+ 
+// ── Render ──────────────────────────────────────────────────────
 function renderAll() {
-  const pk=getPK();
-  const entries=logs.filter(l=>l.period===pk);
-  const counts=countBySource(entries);
-  renderSources(counts);
-  renderMetrics(pk,counts);
-  renderPie(counts);
-  renderBar();
-  renderLog(pk);
+  const d = getData(currentKey());
+  const total = Object.values(d).reduce((a,b) => a+b, 0);
+ 
+  // Update button counts
+  SOURCES.forEach(src => {
+    const el = document.getElementById(`cnt_${src.key}`);
+    if (el) el.textContent = d[src.key] || 0;
+  });
+ 
+  // Stats
+  document.getElementById('statPeriod').textContent = total;
+  const allData = getAllData();
+  const allTime = Object.values(allData).reduce((a, obj) =>
+    a + Object.values(obj).reduce((x,y)=>x+y, 0), 0);
+  document.getElementById('statAllTime').textContent = allTime;
+ 
+  const sorted = SOURCES.map(s => ({ ...s, count: d[s.key] || 0 }))
+    .filter(s => s.count > 0).sort((a,b) => b.count - a.count);
+  document.getElementById('statTop').textContent = sorted.length ? sorted[0].label : '—';
+  document.getElementById('statSources').textContent = sorted.length;
+ 
+  renderBarChart(sorted, total);
+  renderBreakdown(sorted, total);
+  renderTrend();
 }
-
-document.getElementById('periodVal').addEventListener('change', renderAll);
-document.getElementById('yearVal').addEventListener('change', renderAll);
-updatePeriodOptions();
+ 
+function renderBarChart(sorted, total) {
+  const el = document.getElementById('barChart');
+  const top = sorted.slice(0, 6);
+  if (!top.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;margin:auto">No data yet</p>'; return; }
+  const max = top[0].count;
+  el.innerHTML = top.map(s => `
+    <div class="bar-row">
+      <span class="bar-label">${s.label}</span>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${max?Math.round(s.count/max*100):0}%;background:${s.color}"></div>
+      </div>
+      <span class="bar-count">${s.count}</span>
+    </div>
+  `).join('');
+}
+ 
+function renderBreakdown(sorted, total) {
+  const el = document.getElementById('breakdown');
+  if (!sorted.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">No visits logged yet for this period.</p>'; return; }
+  const max = sorted[0].count;
+  el.innerHTML = sorted.map(s => `
+    <div class="breakdown-row">
+      <span class="breakdown-name">
+        <span class="dot" style="background:${s.color}"></span>
+        ${s.label}
+      </span>
+      <div class="breakdown-bar-wrap">
+        <div class="breakdown-bar" style="width:${max?Math.round(s.count/max*100):0}%;background:${s.color}"></div>
+      </div>
+      <span class="breakdown-count">${s.count}</span>
+      <span class="breakdown-pct">${total?Math.round(s.count/total*100):0}%</span>
+    </div>
+  `).join('');
+}
+ 
+function renderTrend() {
+  const canvas = document.getElementById('trendCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio || 400;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio || 140;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  ctx.clearRect(0, 0, W, H);
+ 
+  const pType = getPeriodType();
+  const month = getMonth();
+  const year = getYear();
+  const week = getWeek();
+ 
+  // Build last 6 period labels + totals
+  const periods = [];
+  for (let i = 5; i >= 0; i--) {
+    let lbl, key;
+    if (pType === 'month') {
+      let m = month - i; let y = year;
+      while (m < 0) { m += 12; y--; }
+      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      lbl = names[m];
+      key = storageKey('month', y, m, 0);
+    } else {
+      let w = week - i; let m = month; let y = year;
+      while (w < 1) { w += 5; m--; if (m < 0) { m = 11; y--; } }
+      lbl = `W${w}`;
+      key = storageKey('week', y, m, w);
+    }
+    const d = getData(key);
+    const total = Object.values(d).reduce((a,b)=>a+b, 0);
+    periods.push({ lbl, total });
+  }
+ 
+  const max = Math.max(...periods.map(p=>p.total), 1);
+  const pad = { l: 10, r: 10, t: 16, b: 28 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const step = cW / (periods.length - 1);
+ 
+  // Grid lines
+  ctx.strokeStyle = '#2a2a2e';
+  ctx.lineWidth = 1;
+  [0, 0.5, 1].forEach(f => {
+    const y = pad.t + cH * (1 - f);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cW, y); ctx.stroke();
+  });
+ 
+  const pts = periods.map((p, i) => ({
+    x: pad.l + i * step,
+    y: pad.t + cH * (1 - (p.total / max)),
+    total: p.total, lbl: p.lbl
+  }));
+ 
+  // Area fill
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + cH);
+  grad.addColorStop(0, 'rgba(66,133,244,0.35)');
+  grad.addColorStop(1, 'rgba(66,133,244,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) {
+    const mx = (pts[i-1].x + pts[i].x) / 2;
+    ctx.bezierCurveTo(mx, pts[i-1].y, mx, pts[i].y, pts[i].x, pts[i].y);
+  }
+  ctx.lineTo(pts[pts.length-1].x, pad.t + cH);
+  ctx.lineTo(pts[0].x, pad.t + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+ 
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) {
+    const mx = (pts[i-1].x + pts[i].x) / 2;
+    ctx.bezierCurveTo(mx, pts[i-1].y, mx, pts[i].y, pts[i].x, pts[i].y);
+  }
+  ctx.strokeStyle = '#4285f4';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+ 
+  // Dots + labels
+  pts.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = i === pts.length - 1 ? '#4285f4' : '#2a4a7f';
+    ctx.fill();
+ 
+    ctx.fillStyle = '#6b6b75';
+    ctx.font = `10px DM Mono, monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText(p.lbl, p.x, H - 6);
+ 
+    if (p.total > 0) {
+      ctx.fillStyle = '#a0a0a8';
+      ctx.font = `9px DM Mono, monospace`;
+      ctx.fillText(p.total, p.x, p.y - 8);
+    }
+  });
+}
+ 
+// ── Export CSV ──────────────────────────────────────────────────
+function exportCSV() {
+  const all = getAllData();
+  const rows = [['Period', ...SOURCES.map(s=>s.label), 'Total']];
+  Object.entries(all).sort(([a],[b])=>a.localeCompare(b)).forEach(([k, d]) => {
+    const period = k.replace('ft_','');
+    const counts = SOURCES.map(s => d[s.key] || 0);
+    const total = counts.reduce((a,b)=>a+b,0);
+    rows.push([period, ...counts, total]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `foot-traffic-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('CSV exported!');
+}
+ 
+// ── Clear ───────────────────────────────────────────────────────
+function clearPeriod() {
+  if (!confirm('Clear all data for this period?')) return;
+  localStorage.removeItem(currentKey());
+  renderAll();
+  showToast('Period cleared');
+}
+function clearAll() {
+  if (!confirm('Clear ALL foot traffic data? This cannot be undone.')) return;
+  Object.keys(localStorage).filter(k=>k.startsWith('ft_')).forEach(k=>localStorage.removeItem(k));
+  renderAll();
+  showToast('All data cleared');
+}
+ 
+// ── Toast ───────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+ 
+// ── Init ────────────────────────────────────────────────────────
+initSelects();
+buildGrid();
+renderAll();
+window.addEventListener('resize', renderTrend);
 </script>
 </body>
 </html>
